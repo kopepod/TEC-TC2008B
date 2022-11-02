@@ -345,6 +345,40 @@ task.json
     ]
 }
 ```
+### Temporizador
+Timer.cpp
+```c++
+#include<cstdio>
+#include<iostream>
+#include<ctime>
+
+using namespace std;
 
 
+int main(){
+
+	int delay;
+
+	cout<<"Segundos:"<<flush;
+
+	cin >> delay;
+
+	delay *= CLOCKS_PER_SEC;
+
+	clock_t now = clock();
+
+	while(clock() - now < delay){
+		cout<<"En ejecucion ... "<<endl;
+	};
+
+	cout<<"Fin del ciclo"<<endl;
+
+	return 0;
+
+}
+```
+Compilacion
+```bash
+g++ Timer.cpp -o runme
+```
 
