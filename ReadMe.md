@@ -6,10 +6,15 @@ Aqui: [pdf](https://drive.google.com/drive/folders/1BQ4b9J9Hzsgf-mjIgFpz6PkmL_GQ
 
 ## Codigo
 
+Aqui encontraras el codigo base para correr la actividad M1.
+
 ### Actividad M1 base:
 
-1. Codigo fuente Main.cpp Cubo.cpp Cubo.h
+1. Archivos codigo fuente Main.cpp Cubo.cpp Cubo.h
+2. Compilacion
+3. Ejecucion
 
+Main.cpp
 ```c++
 // Main.cpp
 #ifdef __APPLE__
