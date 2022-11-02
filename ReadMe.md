@@ -378,7 +378,14 @@ int main(){
 }
 ```
 Compilacion
+
 ```bash
 g++ Timer.cpp -o runme
+```
+
+Ejecucion
+
+```bash
+./Timer
 ```
 
