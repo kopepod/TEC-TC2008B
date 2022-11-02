@@ -6,12 +6,12 @@ Aqui: [pdf](https://drive.google.com/drive/folders/1BQ4b9J9Hzsgf-mjIgFpz6PkmL_GQ
 
 ## Codigo
 
-Actividad M1 base:
+### Actividad M1 base:
 
-1. Fuentes Main.cpp Cubo.cpp Cubo.h
+1. Codigo fuente Main.cpp Cubo.cpp Cubo.h
 
 ```
-
+// Main.cpp
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -166,8 +166,9 @@ int main(int argc, char **argv)
     return 0;
 }
 ```
-
+Cubo.cpp
 ```
+// Cubo.cpp
 #include "Cubo.h"
 
 Cubo::Cubo(int dim, float vel)
@@ -244,8 +245,9 @@ void Cubo::update()
 }
 
 ```
-
+Cubo.h
 ```
+// Cubo.h
 #ifndef CUBO_H
 #define CUBO_H
 
