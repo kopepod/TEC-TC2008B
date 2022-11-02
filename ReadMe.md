@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 }
 ```
 Cubo.cpp
-```
+```c++
 // Cubo.cpp
 #include "Cubo.h"
 
@@ -246,7 +246,7 @@ void Cubo::update()
 
 ```
 Cubo.h
-```
+```c++
 // Cubo.h
 #ifndef CUBO_H
 #define CUBO_H
@@ -291,4 +291,10 @@ class Cubo
 };
 
 #endif // CUBO_H
+```
+
+### Compilacion
+
+```bash
+g++ *.cpp -o runme -lglut -lGLU -lGL -I .
 ```
