@@ -10,7 +10,7 @@ Aqui: [pdf](https://drive.google.com/drive/folders/1BQ4b9J9Hzsgf-mjIgFpz6PkmL_GQ
 
 1. Codigo fuente Main.cpp Cubo.cpp Cubo.h
 
-```
+```c++
 // Main.cpp
 #ifdef __APPLE__
 #include <GLUT/glut.h>
