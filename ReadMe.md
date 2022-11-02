@@ -298,3 +298,7 @@ class Cubo
 ```bash
 g++ *.cpp -o runme -lglut -lGLU -lGL -I .
 ```
+### Ejecucion
+```bash
+./runme
+```
