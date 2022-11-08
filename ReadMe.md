@@ -16,7 +16,6 @@ Aqui encontraras el codigo base para correr la actividad M1.
 
 Main.cpp
 ```c++
-// Main.cpp
 
 #include <GL/glut.h>
 #include <stdlib.h>
@@ -158,7 +157,7 @@ void display()
     //c2.draw();
     //c3.draw();
 
-    c1.update(LocNodos, NodeSeq, nextNode);
+    nextNode = c1.update(LocNodos, NodeSeq, nextNode);
     //c2.update(LocNodos);
     //c3.update(LocNodos);
 
@@ -218,6 +217,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
+
 ```
 Cubo.cpp
 ```c++
@@ -241,6 +241,7 @@ Cubo::Cubo(int dim, float vel)
     Direction[2] = rand();
     //Se normaliza el vector de direccion
     float m = sqrt(Direction[0]*Direction[0] + Direction[1]*Direction[1] + Direction[2]*Direction[2]);
+    m += 0.000001;
     Direction[0] /= m;
     Direction[1] /= m;
     Direction[2] /= m;
@@ -249,8 +250,7 @@ Cubo::Cubo(int dim, float vel)
     Direction[1] *= vel;
     Direction[2] *= vel;
 
-    cout << Direction[0] << endl;
-    cout << Direction[2] << endl;
+    cout << " X=" << Position[0] << "\t Y= " << Position[2] << " dX=" << Direction[0] << "\t dY= " << Direction[2] << endl;
 }
 
 Cubo::~Cubo()
@@ -275,9 +275,9 @@ void Cubo::draw()
     glPopMatrix();
 }
 
-float dist2Node(float x, float y, int targetNode, float LocNodos[16][2]){
-    float dx = LocNodos[targetNode][0] - x;
-    float dy = LocNodos[targetNode][1] - y;
+float dist2Node(float Position[3], int targetNode, float LocNodos[16][2]){
+    float dx = LocNodos[targetNode][0] - Position[0];
+    float dy = LocNodos[targetNode][1] - Position[2];
     return  sqrt(dx * dx + dy * dy);
 }
 
@@ -290,51 +290,46 @@ int findIdxNode(int targetNode, int NodeSeq[16]){
     return 0;
 }
 
-void Cubo::update(float LocNodos[16][2], int NodeSeq[16], int nextNode)
+void L2Norm(float Direction[3]){
+    float m = sqrt(Direction[0]*Direction[0] + Direction[1]*Direction[1] + Direction[2]*Direction[2]);
+    m += 0.00001;
+    Direction[0] /= m;
+    Direction[1] /= m;
+    Direction[2] /= m;
+}
+
+void NodeDirection(int targetNode, float LocNodos[16][2], float Direction[3], float Position[3]){
+    Direction[0] = LocNodos[targetNode][0]-Position[0];
+    Direction[2] = LocNodos[targetNode][1]-Position[2];
+    L2Norm(Direction);
+}
+
+
+
+int Cubo::update(float LocNodos[16][2], int NodeSeq[16], int nextNode)
 {
-    float new_x = Position[0] + Direction[0];
-    float new_z = Position[2] + Direction[2];
 
-    float dist = 0;
-    float mindist = 10000000;
-    int closestNode = -1;
+    NodeDirection(nextNode, LocNodos, Direction, Position);
+    float dist = dist2Node(Position, nextNode, LocNodos);
 
-  for (int i = 0; i < 16; i++){ 
-    dist = dist2Node(Position[0], Position[2], i, LocNodos);
-    if(dist < mindist){
-        mindist = dist;
-        closestNode = i;
-    }
-
-    int idx = findIdxNode(closestNode, NodeSeq);
-
-    if(idx < 16){
+    if(dist < 0.5){
+        int idx = findIdxNode(nextNode, NodeSeq);
         idx ++;
+        if(idx == 16){
+            idx = 0;
+        }
+        nextNode = NodeSeq[idx];
     }
 
-    nextNode = NodeSeq[idx];
-
-  }  
-
-     if (abs(new_x) <= DimBoard)
-        Position[0] = new_x;
-    else {
-        Direction[0] *= -1.0;
-        Position[0] += Direction[0];
-    }
-
-    if (abs(new_z) <= DimBoard)
-        Position[2] = new_z;
-    else {
-        Direction[2] *= -1.0;
-        Position[2] += Direction[2];
-    }
+    Position[0] += Direction[0];
+    Position[2] += Direction[2];
 
     cout.width(7);
 
-    cout << "X=" << Position[0] << "\t Z= " << Position[1] << "\t Y= " << Position[2]  << "\t cNode: "<< closestNode << "\t nNode: "<< nextNode << endl;
-}
+    cout << " X=" << Position[0] << "\t Y= " << Position[2] << "\t nNode: "<< nextNode << "\t Distance: " << dist << endl;
 
+    return nextNode;
+}
 ```
 Cubo.h
 ```c++
@@ -356,7 +351,7 @@ class Cubo
         Cubo(int, float);
         ~Cubo();
         void draw();
-        void update(float[16][2], int[16], int);
+        int update(float[16][2], int[16], int);
 
     protected:
 
@@ -381,6 +376,7 @@ class Cubo
 };
 
 #endif // CUBO_H
+
 
 ```
 
