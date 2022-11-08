@@ -17,17 +17,16 @@ Aqui encontraras el codigo base para correr la actividad M1.
 Main.cpp
 ```c++
 // Main.cpp
-#ifdef __APPLE__
-#include <GLUT/glut.h>
-#else
-#include <GL/glut.h>
-#endif
 
+#include <GL/glut.h>
 #include <stdlib.h>
 #include <random>
 #include <iomanip>
 
 #include "Cubo.h"
+#include <string> 
+
+
 
 //Variables dimensiones de la pantalla
 int WIDTH=500;
@@ -56,10 +55,14 @@ float Z_MIN=-500;
 float Z_MAX=500;
 //Size del tablero
 int DimBoard = 200;
+// Localizacion de los nodos
+float LocNodos[16][2];
+int NodeSeq[16] = {0,1,2,3,7,6,5,4,8,9,10,11,15,14,13,12};
+int nextNode = 0;
 
 Cubo c1(DimBoard, 1.5);
-Cubo c2(DimBoard, 0.0);
-Cubo c3(DimBoard, 0.2);
+// Cubo c2(DimBoard, 0.0);
+// Cubo c3(DimBoard, 0.2);
 
 
 void drawAxis()
@@ -86,8 +89,38 @@ void drawAxis()
      glLineWidth(1.0);
  }
 
+void drawString(int x, int y, int z, const char* text) {
+  //glEnable(GL_TEXTURE_3D);
+  glColor3f(1.0f, 1.0f, 1.0f);
+  // Render the text
+  glRasterPos3i(x, y, z);
+  string s = text;
+  void * font = GLUT_BITMAP_9_BY_15;
+  for (string::iterator i = s.begin(); i != s.end(); ++i){
+    char c = *i;
+    glutBitmapCharacter(font, c);
+  }
+}
+
+
+
  void init()
 {
+
+
+  float cx = -150;
+  float cy = -150;
+
+  for (int i = 0; i < 16; i++){
+
+  	LocNodos[i][0] = cx;
+  	LocNodos[i][1] = cy;
+  	cx += 100;
+  	if(cx > 150){
+  		cx = -150;
+  		cy += 100;
+  	}
+  }
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(FOVY, (GLfloat)WIDTH/HEIGTH, ZNEAR, ZFAR);
@@ -102,9 +135,10 @@ void drawAxis()
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    drawAxis();
-    glColor3f(0.3, 0.3, 0.3);
-    //El piso es dibujado
+
+    //drawAxis();
+    glColor3f(0.5, 0.5, 0.5);
+    //Floor
     glBegin(GL_QUADS);
         glVertex3d(-DimBoard, 0.0, -DimBoard);
         glVertex3d(-DimBoard, 0.0, DimBoard);
@@ -112,13 +146,21 @@ void display()
         glVertex3d(DimBoard, 0.0, -DimBoard);
     glEnd();
 
-    c1.draw();
-    c2.draw();
-    c3.draw();
+  for (int i = 0; i < 16; i++){
+    std::string s = std::to_string(i);
+    char const *pchar = s.c_str();
+    drawString(LocNodos[i][0],10,LocNodos[i][1], pchar);
+  }
 
-    c1.update();
-    c2.update();
-    c3.update();
+    
+
+    c1.draw();
+    //c2.draw();
+    //c3.draw();
+
+    c1.update(LocNodos, NodeSeq, nextNode);
+    //c2.update(LocNodos);
+    //c3.update(LocNodos);
 
     glutSwapBuffers();
 }
@@ -158,23 +200,31 @@ void keyboard(unsigned char key, int x, int y)
 
 int main(int argc, char **argv)
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-    glutInitWindowPosition(100, 100);
-    glutInitWindowSize(WIDTH, HEIGTH);
-    glutCreateWindow("Cubo 1");
-    init();
-    glutDisplayFunc(display);
-    glutIdleFunc(idle);
-    glutKeyboardFunc(keyboard);
-    glutMainLoop();
-    return 0;
+
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
+  glutInitWindowPosition(100, 100);
+  glutInitWindowSize(WIDTH, HEIGTH);
+  glutCreateWindow("Cubo 1");
+  init();
+  glutDisplayFunc(display);
+  glutIdleFunc(idle);
+  glutKeyboardFunc(keyboard);
+  glutMainLoop();
+
+
+
+
+  return 0;
 }
+
 ```
 Cubo.cpp
 ```c++
 // Cubo.cpp
 #include "Cubo.h"
+#include <bits/stdc++.h>
+
 
 Cubo::Cubo(int dim, float vel)
 {
@@ -183,8 +233,8 @@ Cubo::Cubo(int dim, float vel)
     int c;
 
     //Se inicializa una posicion aleatoria dentro del tablero
-    Position[0] = (float)(rand()%(2*DimBoard)) - DimBoard;
-    Position[2] = (float)(rand()%(2*DimBoard)) - DimBoard;
+    Position[0] = -200;
+    Position[2] = -200;
     //Se inicializa el vector de direccion con un valor aleatorio
     Direction[0] = rand();
     Direction[1] = rand();
@@ -225,14 +275,48 @@ void Cubo::draw()
     glPopMatrix();
 }
 
-void Cubo::update()
+float dist2Node(float x, float y, int targetNode, float LocNodos[16][2]){
+    float dx = LocNodos[targetNode][0] - x;
+    float dy = LocNodos[targetNode][1] - y;
+    return  sqrt(dx * dx + dy * dy);
+}
+
+int findIdxNode(int targetNode, int NodeSeq[16]){
+    for (int i = 0; i < 16; i++){ 
+        if(targetNode == NodeSeq[i]){
+            return i;
+        }
+    }
+    return 0;
+}
+
+void Cubo::update(float LocNodos[16][2], int NodeSeq[16], int nextNode)
 {
     float new_x = Position[0] + Direction[0];
     float new_z = Position[2] + Direction[2];
 
-    cout << "X=" << Position[0] << "; Y= " << Position[2] << endl;
+    float dist = 0;
+    float mindist = 10000000;
+    int closestNode = -1;
 
-    if (abs(new_x) <= DimBoard)
+  for (int i = 0; i < 16; i++){ 
+    dist = dist2Node(Position[0], Position[2], i, LocNodos);
+    if(dist < mindist){
+        mindist = dist;
+        closestNode = i;
+    }
+
+    int idx = findIdxNode(closestNode, NodeSeq);
+
+    if(idx < 16){
+        idx ++;
+    }
+
+    nextNode = NodeSeq[idx];
+
+  }  
+
+     if (abs(new_x) <= DimBoard)
         Position[0] = new_x;
     else {
         Direction[0] *= -1.0;
@@ -246,13 +330,14 @@ void Cubo::update()
         Position[2] += Direction[2];
     }
 
-    cout << "X=" << Position[0] << "; Y= " << Position[2] << endl;
+    cout.width(7);
+
+    cout << "X=" << Position[0] << "\t Z= " << Position[1] << "\t Y= " << Position[2]  << "\t cNode: "<< closestNode << "\t nNode: "<< nextNode << endl;
 }
 
 ```
 Cubo.h
 ```c++
-// Cubo.h
 #ifndef CUBO_H
 #define CUBO_H
 
@@ -271,7 +356,7 @@ class Cubo
         Cubo(int, float);
         ~Cubo();
         void draw();
-        void update();
+        void update(float[16][2], int[16], int);
 
     protected:
 
@@ -296,6 +381,7 @@ class Cubo
 };
 
 #endif // CUBO_H
+
 ```
 
 ### Compilacion
