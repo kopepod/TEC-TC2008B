@@ -17,6 +17,7 @@ Aqui encontraras el codigo base para correr la actividad M1.
 Main.cpp
 ```c++
 
+
 #include <GL/glut.h>
 #include <stdlib.h>
 #include <random>
@@ -54,12 +55,17 @@ float Z_MIN=-500;
 float Z_MAX=500;
 //Size del tablero
 int DimBoard = 200;
+const int NUMNODES = 16;
 // Localizacion de los nodos
-float LocNodos[16][2];
-int NodeSeq[16] = {0,1,2,3,7,6,5,4,8,9,10,11,15,14,13,12};
+float LocNodos[NUMNODES][2];
+int TransitionMatrix[NUMNODES][NUMNODES];
+//int NodeSeq[] = {0,1,2,3,7,6,5,4,8,9,10,11,15,14,13,12};
+int NodeSeq[100];
+//
 int nextNode = 0;
+float speed = 2;
 
-Cubo c1(DimBoard, 1.5);
+Cubo c1(DimBoard, 4);
 // Cubo c2(DimBoard, 0.0);
 // Cubo c3(DimBoard, 0.2);
 
@@ -101,17 +107,19 @@ void drawString(int x, int y, int z, const char* text) {
   }
 }
 
+void RandNodes(int NodeSeq[]){
+  NodeSeq[0] = 0;
+  for(int i = 1; i < 100; i ++){
+    NodeSeq[i] = rand() % 16;
+  }
 
+}
 
- void init()
-{
-
-
+void PopulateLocNodes(){
   float cx = -150;
   float cy = -150;
 
-  for (int i = 0; i < 16; i++){
-
+  for (int i = 0; i < NUMNODES; i++){
   	LocNodos[i][0] = cx;
   	LocNodos[i][1] = cy;
   	cx += 100;
@@ -120,15 +128,75 @@ void drawString(int x, int y, int z, const char* text) {
   		cy += 100;
   	}
   }
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(FOVY, (GLfloat)WIDTH/HEIGTH, ZNEAR, ZFAR);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z);
-    glClearColor(0,0,0,0);
-    glEnable(GL_DEPTH_TEST);
-    srand(time(nullptr));
+}
+
+void PopulateTMatrix(){
+  int n = sqrt(NUMNODES);
+  int Nodes[n][n];
+  int k = 0;
+  for (int i = 0; i < n; i++){
+    for (int j = 0; j < n; j++){
+        Nodes[i][j] = k;
+        k++;
+    }
+  }
+
+  int nNode = 0;
+  int cNode = 0;
+
+  for (int i = 0; i < n; i++){
+    for (int j = 0; j < n; j++){
+      cNode = Nodes[i][j];
+      for(int x = i-1;x <= i+1; x++){
+        for(int y = j-1;y <= j+1; y++){
+          if(x >= 0 && x < n && y >= 0 && y < n){
+            nNode = Nodes[x][y];
+            TransitionMatrix[cNode][nNode] = 1;
+          }
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < NUMNODES; i++){
+    for (int j = 0; j < NUMNODES; j++){
+        if(i == j || TransitionMatrix[i][j] != 1){
+          TransitionMatrix[i][j] = 0;
+        }
+    }
+  }
+
+  cout << "Transition Matrix" << endl;
+  for (int i = 0; i < NUMNODES; i++){
+    for (int j = 0; j < NUMNODES; j++){
+      cout << TransitionMatrix[i][j] << " ";
+    }
+    cout << "\n" << endl;
+  }
+
+}
+
+void init(){
+
+  RandNodes(NodeSeq);
+  PopulateLocNodes();
+  PopulateTMatrix();
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(FOVY, (GLfloat)WIDTH/HEIGTH, ZNEAR, ZFAR);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z);
+  glClearColor(0,0,0,0);
+  glEnable(GL_DEPTH_TEST);
+  srand(time(nullptr));
+}
+
+void delay(float secs)
+{
+	float end = clock() / CLOCKS_PER_SEC + secs;
+	while ((clock() / CLOCKS_PER_SEC) < end);
 }
 
 void display()
@@ -145,7 +213,7 @@ void display()
         glVertex3d(DimBoard, 0.0, -DimBoard);
     glEnd();
 
-  for (int i = 0; i < 16; i++){
+  for (int i = 0; i < NUMNODES; i++){
     std::string s = std::to_string(i);
     char const *pchar = s.c_str();
     drawString(LocNodos[i][0],10,LocNodos[i][1], pchar);
@@ -157,12 +225,15 @@ void display()
     //c2.draw();
     //c3.draw();
 
-    nextNode = c1.update(LocNodos, NodeSeq, nextNode);
+    nextNode = c1.update(LocNodos, TransitionMatrix, nextNode, speed);
     //c2.update(LocNodos);
     //c3.update(LocNodos);
 
     glutSwapBuffers();
+    //delay(0.25);
 }
+
+
 
 void idle()
 {
@@ -204,7 +275,7 @@ int main(int argc, char **argv)
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
   glutInitWindowPosition(100, 100);
   glutInitWindowSize(WIDTH, HEIGTH);
-  glutCreateWindow("Cubo 1");
+  glutCreateWindow("ActividadM1");
   init();
   glutDisplayFunc(display);
   glutIdleFunc(idle);
@@ -225,6 +296,7 @@ Cubo.cpp
 #include "Cubo.h"
 #include <bits/stdc++.h>
 
+const int NUMNODES = 16;
 
 Cubo::Cubo(int dim, float vel)
 {
@@ -275,14 +347,14 @@ void Cubo::draw()
     glPopMatrix();
 }
 
-float dist2Node(float Position[3], int targetNode, float LocNodos[16][2]){
+float dist2Node(float Position[3], int targetNode, float LocNodos[][2]){
     float dx = LocNodos[targetNode][0] - Position[0];
     float dy = LocNodos[targetNode][1] - Position[2];
     return  sqrt(dx * dx + dy * dy);
 }
 
-int findIdxNode(int targetNode, int NodeSeq[16]){
-    for (int i = 0; i < 16; i++){ 
+int findIdxNode(int targetNode, int NodeSeq[]){
+    for (int i = 0; i < 100; i++){ 
         if(targetNode == NodeSeq[i]){
             return i;
         }
@@ -298,31 +370,37 @@ void L2Norm(float Direction[3]){
     Direction[2] /= m;
 }
 
-void NodeDirection(int targetNode, float LocNodos[16][2], float Direction[3], float Position[3]){
+void NodeDirection(int targetNode, float LocNodos[][2], float Direction[3], float Position[3]){
     Direction[0] = LocNodos[targetNode][0]-Position[0];
     Direction[2] = LocNodos[targetNode][1]-Position[2];
     L2Norm(Direction);
 }
 
+int RetrieveNextNode(int cNode, int TransitionMatrix[NUMNODES][NUMNODES]){
+    int aux[NUMNODES];
+    int k = 0;
+    for(int i = 0; i < NUMNODES; i++){
+        if(TransitionMatrix[cNode][i] == 1){
+            aux[k] = i;
+            k++;
+        }
+    }
+    int sel = rand() % k;
+    return aux[sel];
+}
 
 
-int Cubo::update(float LocNodos[16][2], int NodeSeq[16], int nextNode)
-{
-
+int Cubo::update(float LocNodos[][2], int TransitionMatrix[NUMNODES][NUMNODES], int nextNode, float speed){
+    
     NodeDirection(nextNode, LocNodos, Direction, Position);
     float dist = dist2Node(Position, nextNode, LocNodos);
 
-    if(dist < 0.5){
-        int idx = findIdxNode(nextNode, NodeSeq);
-        idx ++;
-        if(idx == 16){
-            idx = 0;
-        }
-        nextNode = NodeSeq[idx];
+    if(dist < 5){
+        nextNode = RetrieveNextNode(nextNode, TransitionMatrix);
     }
 
-    Position[0] += Direction[0];
-    Position[2] += Direction[2];
+    Position[0] += speed * Direction[0];
+    Position[2] += speed * Direction[2];
 
     cout.width(7);
 
@@ -342,16 +420,16 @@ Cubo.h
 #include <GL/glut.h>
 #include <iostream>
 
-
 using namespace std;
 
 class Cubo
 {
     public:
+        
         Cubo(int, float);
         ~Cubo();
         void draw();
-        int update(float[16][2], int[16], int);
+        int update(float[][2], int[16][16], int, float);
 
     protected:
 
@@ -376,6 +454,7 @@ class Cubo
 };
 
 #endif // CUBO_H
+
 
 
 ```
