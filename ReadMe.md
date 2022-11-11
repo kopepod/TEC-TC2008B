@@ -62,7 +62,7 @@ int TransitionMatrix[NUMNODES][NUMNODES];
 int NodeSeq[100];
 //
 int A1nextNode = 0;
-int A2nextNode = 0;
+int A2nextNode = 2;
 float speed = 2;
 
 Cubo c1(DimBoard, 4);
@@ -225,8 +225,8 @@ void display()
     c2.draw();
     //c3.draw();
 
-    A1nextNode = c1.update(LocNodos, TransitionMatrix, A1nextNode, speed);
-    A2nextNode = c2.update(LocNodos, TransitionMatrix, A2nextNode, speed);
+    A1nextNode = c1.update(LocNodos, TransitionMatrix, A1nextNode, A2nextNode, speed);
+    A2nextNode = c2.update(LocNodos, TransitionMatrix, A2nextNode, A1nextNode, speed);
     //c2.update(LocNodos);
     //c3.update(LocNodos);
 
@@ -377,11 +377,11 @@ void NodeDirection(int targetNode, float LocNodos[][2], float Direction[3], floa
     L2Norm(Direction);
 }
 
-int RetrieveNextNode(int cNode, int TransitionMatrix[NUMNODES][NUMNODES]){
+int RetrieveNextNode(int cNode, int otherNode, int TransitionMatrix[NUMNODES][NUMNODES]){
     int aux[NUMNODES];
     int k = 0;
     for(int i = 0; i < NUMNODES; i++){
-        if(TransitionMatrix[cNode][i] == 1){
+        if(TransitionMatrix[cNode][i] == 1 && i != otherNode){
             aux[k] = i;
             k++;
         }
@@ -391,13 +391,13 @@ int RetrieveNextNode(int cNode, int TransitionMatrix[NUMNODES][NUMNODES]){
 }
 
 
-int Cubo::update(float LocNodos[][2], int TransitionMatrix[NUMNODES][NUMNODES], int nextNode, float speed){
+int Cubo::update(float LocNodos[][2], int TransitionMatrix[NUMNODES][NUMNODES], int nextNode, int otherNode, float speed){
     
     NodeDirection(nextNode, LocNodos, Direction, Position);
     float dist = dist2Node(Position, nextNode, LocNodos);
 
     if(dist < 5){
-        nextNode = RetrieveNextNode(nextNode, TransitionMatrix);
+        nextNode = RetrieveNextNode(nextNode, otherNode, TransitionMatrix);
     }
 
     Position[0] += speed * Direction[0];
@@ -430,7 +430,7 @@ class Cubo
         Cubo(int, float);
         ~Cubo();
         void draw();
-        int update(float[][2], int[16][16], int, float);
+        int update(float[][2], int[16][16], int, int, float);
 
     protected:
 
@@ -455,7 +455,6 @@ class Cubo
 };
 
 #endif // CUBO_H
-
 
 
 ```
